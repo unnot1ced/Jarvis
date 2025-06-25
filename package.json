@@ -1,0 +1,22 @@
+{
+  "name": "jarvis-ai-assistant",
+  "version": "1.0.0",
+  "description": "Local JARVIS-inspired AI assistant with Ollama integration",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "cd frontend && npm run dev",
+    "server": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "health": "./health-check.sh",
+    "start": "./start-jarvis.sh",
+    "test-ollama": "curl -s http://145.118.6.53:11434/api/tags",
+    "test-backend": "curl -s http://localhost:3001/api/health",
+    "clean": "rm -rf node_modules frontend/node_modules backend/node_modules",
+    "reset": "npm run clean && npm run install-all"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
