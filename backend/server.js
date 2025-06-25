@@ -163,3 +163,60 @@ const tools = {
   }
 };
 
+function parseAndExecuteTools(text) {
+  const doRegex = /#DO:\s*(\w+)\("([^"]*)"\)/g;
+  const promises = [];
+  let match;
+
+  while ((match = doRegex.exec(text)) !== null) {
+    const [, toolName, parameter] = match;
+    if (tools[toolName]) {
+      promises.push(tools[toolName](parameter));
+    } else {
+      promises.push(Promise.resolve(`❌ Unknown tool: ${toolName}`));
+    }
+  }
+
+  return promises;
+}
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, history = [] } = req.body;
+
+    const conversation = [
+      { role: 'system', content: JARVIS_PROMPT },
+      ...history,
+      { role: 'user', content: message }
+    ];
+
+    const response = await axios.post(`${OLLAMA_URL}/api/chat`, {
+      model: 'llama3.2:latest',
+      messages: conversation,
+      stream: false
+    });
+
+    const assistantResponse = response.data.message.content;
+
+    const toolPromises = parseAndExecuteTools(assistantResponse);
+    const toolResults = await Promise.all(toolPromises);
+
+    let finalResponse = assistantResponse;
+    if (toolResults.length > 0) {
+      finalResponse += '\n\n' + toolResults.join('\n');
+    }
+
+    res.json({
+      response: finalResponse,
+      toolResults: toolResults
+    });
+
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({
+      error: 'Sorry, I encountered an error. Please try again.',
+      details: error.message
+    });
+  }
+});
+
