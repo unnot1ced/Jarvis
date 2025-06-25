@@ -220,3 +220,31 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'online', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/test-ollama', async (req, res) => {
+  try {
+    const response = await axios.get(`${OLLAMA_URL}/api/tags`);
+    res.json({ status: 'connected', models: response.data.models });
+  } catch (error) {
+    res.status(500).json({ status: 'disconnected', error: error.message });
+  }
+});
+
+const server = app.listen(PORT, () => {
+  console.log(`JARVIS Backend running on http://localhost:${PORT}`);
+  console.log(`Connected to Ollama at ${OLLAMA_URL}`);
+});
+
+const wss = new WebSocketServer({ server });
+wss.on('connection', (ws) => {
+  console.log('Client connected via WebSocket');
+
+  ws.on('close', () => {
+    console.log('client disconnected');
+  });
+});
+
+export default app;
